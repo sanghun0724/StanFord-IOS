@@ -17,7 +17,8 @@ class FaceView: UIView {
         skull.lineWidth = 5.0
         UIColor.blue.set()
         skull.stroke()
-    }
+    } //원그리는 과정 Path 를 정해주고 stroke로 그러주기 rect사용
+    
   
 
 }
