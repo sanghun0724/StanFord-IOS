@@ -6,11 +6,20 @@
 //
 
 import UIKit
-
+@IBDesignable
 class FaceView: UIView {
-    private var scale:CGFloat = 0.90
-    
-    var mouthCurvature:Double = 0.0 //1 full smile, -1 full frown
+    @IBInspectable
+    private var scale:CGFloat = 0.90 { didSet {setNeedsDisplay() }} //다시그리기 불려질때마다
+    @IBInspectable
+    var mouthCurvature:Double = 1.0  { didSet {setNeedsDisplay() }}
+    @IBInspectable
+    var eyesOpen:Bool = true { didSet {setNeedsDisplay() }}
+    @IBInspectable
+    var eyeBrowTilt:Double = 0.0 { didSet {setNeedsDisplay() }}
+    @IBInspectable
+    var color:UIColor = UIColor.blue { didSet {setNeedsDisplay() }}
+    @IBInspectable
+    var lineWidth:CGFloat = 5.0 { didSet {setNeedsDisplay() }}
     
     private var skullRadius:CGFloat {
         return min(bounds.size.width,bounds.size.height) / 2 * scale
@@ -25,6 +34,7 @@ class FaceView: UIView {
         static let SkullRadiusToMouthWidth:CGFloat = 1
         static let SkullRadiusToMouthHeight:CGFloat = 3
         static let SkullRadiusToMouthOffset:CGFloat = 3
+        static let SkullRadiusToBrowOffset:CGFloat = 5
     }
     
     private enum Eye {
@@ -56,7 +66,17 @@ class FaceView: UIView {
     private func pathForEye(eye:Eye) -> UIBezierPath {
         let eyeRadius = skullRadius / Ratios.SkullRadiusToEyeRadius
         let eyeCenter = getEyeCenter(eye: eye)
-        return pathForCircleCenterAtPoint(midPoint: eyeCenter, withRadius: eyeRadius)
+        if eyesOpen {
+            return pathForCircleCenterAtPoint(midPoint: eyeCenter, withRadius: eyeRadius)
+        } else {
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: eyeCenter.x - eyeRadius, y: eyeCenter.y))
+            path.addLine(to: CGPoint(x: eyeCenter.x + eyeRadius, y: eyeCenter.y))
+            path.lineWidth = 5.0
+            return path
+        }
+        
+        
     }
     
     private func pathForMouth() -> UIBezierPath {
@@ -69,10 +89,10 @@ class FaceView: UIView {
     
         let smileOffset = CGFloat(max(-1, min(mouthCurvature, 1))) * mouthRect.height
         let start = CGPoint(x: mouthRect.minX, y: mouthRect.minY)
-        let end = CGPoint(x: mouthRect.minX, y: mouthRect.minY)
+        let end = CGPoint(x: mouthRect.maxX, y: mouthRect.minY)
         let cp1 = CGPoint(x: mouthRect.minX + mouthRect.width / 3
                           , y: mouthRect.minY + smileOffset)
-        let cp2 = CGPoint(x: mouthRect.minX + mouthRect.width / 3
+        let cp2 = CGPoint(x: mouthRect.maxX - mouthRect.width / 3
                           , y: mouthRect.minY + smileOffset)
        let path = UIBezierPath()
         path.move(to: start)
@@ -82,13 +102,36 @@ class FaceView: UIView {
         return path
     }
     
+    private func pathForBrow(eye:Eye) -> UIBezierPath {
+        var tilt = eyeBrowTilt
+        switch eye {
+        case.Left:tilt *= -1.0
+        case.Right:break
+        }
+        var browCenter = getEyeCenter(eye: eye)
+        browCenter.y -= skullRadius / Ratios.SkullRadiusToBrowOffset
+        let eyeRadius = skullRadius / Ratios.SkullRadiusToEyeRadius
+        let tiltOffset = CGFloat(max(-1, min(tilt,1))) * eyeRadius / 2
+        let browStart = CGPoint(x: browCenter.x - eyeRadius, y: browCenter.y - tiltOffset)
+        let browEnd = CGPoint(x: browCenter.x + eyeRadius, y:  browCenter.y + tiltOffset)
+        let path = UIBezierPath()
+        path.move(to: browStart)
+        path.addLine(to: browEnd)
+        path.lineWidth = 5.0
+        return path
+    }
+     
+    
     
     override func draw(_ rect: CGRect) {
-        UIColor.blue.set()
+        color.set()
         pathForCircleCenterAtPoint(midPoint: skullCenter, withRadius: skullRadius).stroke()
         pathForEye(eye: .Left).stroke()
         pathForEye(eye: .Right).stroke()
         pathForMouth().stroke()
+        pathForBrow(eye: .Left).stroke()
+        pathForBrow(eye: .Right).stroke()
+        
     } //원그리는 과정 Path 를 정해주고 stroke로 그러주기 rect사용
     
     
