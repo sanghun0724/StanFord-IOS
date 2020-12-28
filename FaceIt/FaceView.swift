@@ -21,7 +21,7 @@ class FaceView: UIView {
     @IBInspectable
     var lineWidth:CGFloat = 5.0 { didSet {setNeedsDisplay() }}
     
-    func chageScale(reconizer:UIPinchGestureRecognizer) {
+   @objc func changeScale(reconizer:UIPinchGestureRecognizer) {
         switch reconizer.state {
         case .changed,.ended:
             scale *= reconizer.scale
